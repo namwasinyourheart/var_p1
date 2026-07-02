@@ -67,6 +67,8 @@ def _find_checkpoint(model_path: Path) -> Path:
 
 
 def _make_camera(pose: Dict) -> Camera:
+    from PIL import Image as PILImage
+
     R_w2c = quaternion_to_rotation_matrix(pose["qvec"])
     R = R_w2c.T
     T = pose["tvec"]
@@ -76,14 +78,18 @@ def _make_camera(pose: Dict) -> Camera:
     FoVx = 2 * np.arctan2(W / 2, fx)
     FoVy = 2 * np.arctan2(H / 2, fy)
 
+    dummy_image = PILImage.fromarray(np.zeros((H, W, 3), dtype=np.uint8))
+
     cam = Camera(
+        resolution=(W, H),
         colmap_id=0,
         R=torch.from_numpy(R).float().cuda(),
         T=torch.from_numpy(T).float().cuda(),
         FoVx=FoVx,
         FoVy=FoVy,
-        image=torch.zeros(3, H, W, device="cuda"),
-        gt_alpha_mask=None,
+        depth_params=None,
+        image=dummy_image,
+        invdepthmap=None,
         image_name=Path(pose["image_name"]).stem,
         uid=0,
     )
