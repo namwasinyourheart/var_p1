@@ -1,0 +1,12 @@
+diff --git a/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h b/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h
+index b5aba08..90b1592 100644
+--- a/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h
++++ b/submodules/diff-gaussian-rasterization/cuda_rasterizer/rasterizer_impl.h
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) 2023, Inria
+  * GRAPHDECO research group, https://team.inria.fr/graphdeco
+  * All rights reserved.
+  *
+  */
++#include <cstdint>
