@@ -28,7 +28,7 @@ def train_scene_subprocess(scene_name, converted_root, model_root, gsplat_root, 
         "-s", str(source),
         "-m", str(model_dir),
         "--iterations", str(iterations),
-        "--eval",
+        "--images", "input",
     ]
     print(f"  Running 3DGS training...")
     r = subprocess.run(cmd, capture_output=True, text=True)

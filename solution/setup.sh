@@ -41,15 +41,22 @@ cd third_party/gaussian-splatting
 
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.6}"
 
-if [ ! -d "submodules/diff-gaussian-rasterization/build" ]; then
-    echo "Building diff-gaussian-rasterization..."
-    CUDA_HOME="$CUDA_HOME" pip install submodules/diff-gaussian-rasterization
-fi
+build_cuda_ext() {
+    local name="$1" path="$2"
+    if python -c "import $name" 2>/dev/null; then
+        echo "  $name already installed, skipping"
+        return
+    fi
+    echo "  Building $name..."
+    rm -rf "$path/build" "$path/*.egg-info"
+    CUDA_HOME="$CUDA_HOME" pip install -e "$path" --no-build-isolation
+}
 
-if [ ! -d "submodules/simple-knn/build" ]; then
-    echo "Building simple-knn..."
-    CUDA_HOME="$CUDA_HOME" pip install submodules/simple-knn
-fi
+echo "Building diff-gaussian-rasterization..."
+build_cuda_ext diff_gaussian_rasterization submodules/diff-gaussian-rasterization
+
+echo "Building simple-knn..."
+build_cuda_ext simple_knn submodules/simple-knn
 
 cd ../../
 

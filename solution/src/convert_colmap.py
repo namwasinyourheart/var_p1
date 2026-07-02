@@ -12,7 +12,7 @@ def convert_scene(scene_path: Path, output_path: Path):
     images_dir = scene_path / "train" / "images"
 
     sparse_out = output_path / "sparse" / "0"
-    input_out = output_path / "input"
+    input_out = output_path / "images"
 
     sparse_out.mkdir(parents=True, exist_ok=True)
     input_out.mkdir(parents=True, exist_ok=True)
