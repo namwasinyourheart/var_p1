@@ -9,6 +9,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent / "third_party" / "ga
 
 from scene.cameras import Camera
 from gaussian_renderer import render
+from argparse import ArgumentParser
 from arguments import PipelineParams
 
 from src.utils.pose_io import read_test_poses_csv, quaternion_to_rotation_matrix
@@ -40,7 +41,7 @@ def render_test_views(
     if not silent:
         print(f"  Loaded {gaussians._xyz.shape[0]} Gaussians")
 
-    pipe = PipelineParams()
+    pipe = PipelineParams(ArgumentParser())
     bg = torch.tensor([1, 1, 1], dtype=torch.float32, device="cuda")
 
     for i, pose in enumerate(test_poses):
