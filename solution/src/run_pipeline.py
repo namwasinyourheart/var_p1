@@ -13,8 +13,9 @@ def load_config():
         return yaml.safe_load(f)
 
 
-def train_scene_subprocess(scene_name, converted_root, model_root, gsplat_root, iterations=30000):
-    import subprocess
+def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=30000):
+    import os
+    import sys
 
     source = converted_root / scene_name
     model_dir = model_root / scene_name
@@ -22,19 +23,45 @@ def train_scene_subprocess(scene_name, converted_root, model_root, gsplat_root, 
     if model_dir.exists() and any(model_dir.iterdir()):
         return
 
-    cmd = [
-        sys.executable,
-        str(gsplat_root / "train.py"),
-        "-s", str(source),
-        "-m", str(model_dir),
-        "--iterations", str(iterations),
-        "--images", "input",
-    ]
-    print(f"  Running 3DGS training...")
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        print(r.stderr[-3000:])
-        raise RuntimeError(f"Training failed for {scene_name}")
+    gsplat_dir = str(gsplat_root.resolve())
+    orig_cwd = os.getcwd()
+    orig_path = sys.path.copy()
+
+    try:
+        os.chdir(gsplat_dir)
+        sys.path.insert(0, gsplat_dir)
+
+        from arguments import ModelParams, PipelineParams, OptimizationParams
+
+        parser = argparse.ArgumentParser()
+        lp = ModelParams(parser)
+        op = OptimizationParams(parser)
+        pp = PipelineParams(parser)
+        parser.add_argument('--detect_anomaly', action='store_true', default=False)
+        parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
+        parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 30_000])
+        parser.add_argument("--quiet", action="store_true")
+        parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
+        parser.add_argument("--start_checkpoint", type=str, default=None)
+
+        args = parser.parse_args([
+            "-s", str(source),
+            "-m", str(model_dir),
+            "--iterations", str(iterations),
+        ])
+        args.save_iterations.append(args.iterations)
+
+        from train import training
+        from utils.general_utils import safe_state
+
+        print(f"  Running 3DGS training (in-process)...")
+        safe_state(args.quiet)
+        training(lp.extract(args), op.extract(args), pp.extract(args),
+                 args.test_iterations, args.save_iterations,
+                 args.checkpoint_iterations, args.start_checkpoint, -1)
+    finally:
+        os.chdir(orig_cwd)
+        sys.path = orig_path
 
 
 def main():
@@ -87,7 +114,7 @@ def main():
         if args.stage in ("all", "train"):
             print("[train] Training 3DGS...")
             train_cfg = config["train"]
-            train_scene_subprocess(
+            train_scene(
                 scene_name, converted_root, model_root, gsplat_root,
                 iterations=train_cfg["iterations"],
             )
