@@ -29,13 +29,17 @@ if [ ! -d "third_party/gaussian-splatting" ]; then
     git submodule update --init --recursive
     cd ../..
     echo "Applying patches..."
-    for p in third_party_patches/*.patch; do
+    cd third_party/gaussian-splatting
+    for p in ../../third_party_patches/*.patch; do
         patch -p1 < "$p"
         echo "  Applied: $p"
     done
+    cd ../..
 fi
 
 cd third_party/gaussian-splatting
+
+export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.6}"
 
 if [ ! -d "submodules/diff-gaussian-rasterization/build" ]; then
     echo "Building diff-gaussian-rasterization..."
