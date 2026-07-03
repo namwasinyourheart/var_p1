@@ -76,9 +76,10 @@ def main():
     output_root = Path(config["output_root"])
     gsplat_root = Path(config["gaussian_splatting"])
 
+    exp_name = config.get("exp_name", "default")
     converted_root = output_root / "converted"
-    model_root = output_root / "models"
-    submission_root = output_root / "submissions"
+    model_root = output_root / "models" / exp_name
+    submission_root = output_root / "submissions" / exp_name
 
     converted_root.mkdir(parents=True, exist_ok=True)
     model_root.mkdir(parents=True, exist_ok=True)
@@ -97,6 +98,7 @@ def main():
 
     for scene_name in scenes:
         set_name = "public_set" if scene_name in config["scenes"]["public"] else "private_set1"
+        split_name = "public" if scene_name in config["scenes"]["public"] else "private"
         scene_path = data_root / set_name / scene_name
 
         print(f"\n{'='*60}")
@@ -104,7 +106,7 @@ def main():
         print(f"{'='*60}")
 
         if args.stage in ("all", "convert"):
-            out = converted_root / scene_name
+            out = converted_root / split_name / scene_name
             if not out.exists():
                 print("[convert] Converting COLMAP data...")
                 convert_scene(scene_path, out)
@@ -115,19 +117,19 @@ def main():
             print("[train] Training 3DGS...")
             train_cfg = config["train"]
             train_scene(
-                scene_name, converted_root, model_root, gsplat_root,
+                scene_name, converted_root / split_name, model_root / split_name, gsplat_root,
                 iterations=train_cfg["iterations"],
             )
 
         if args.stage in ("all", "render"):
             print("[render] Rendering test views...")
             render_test_views(
-                scene_name, scene_path, model_root / scene_name, submission_root,
+                scene_name, scene_path, model_root / split_name / scene_name, submission_root / split_name,
             )
 
         if args.stage in ("all", "evaluate") and set_name == "public_set":
             print("[evaluate] Computing metrics...")
-            results = evaluate_public_scene(scene_path, submission_root, scene_name)
+            results = evaluate_public_scene(scene_path, submission_root / split_name, scene_name)
             if results:
                 print(f"  PSNR: {results['psnr_mean']:.2f}  SSIM: {results['ssim_mean']:.4f}")
                 if "lpips_mean" in results:

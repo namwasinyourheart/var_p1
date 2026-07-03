@@ -124,26 +124,28 @@ def write_points3D_txt(points3D, path: Path):
 
 if __name__ == "__main__":
     import argparse
+    import yaml
     parser = argparse.ArgumentParser()
     parser.add_argument("--scene_name", required=True)
     parser.add_argument("--data_root", default=None)
     parser.add_argument("--output_root", default=None)
     args = parser.parse_args()
 
+    config_path = Path(__file__).resolve().parent.parent / "config.yaml"
+    with open(config_path) as f:
+        cfg = yaml.safe_load(f)
+
     if args.data_root is None:
-        import yaml
-        config_path = Path(__file__).resolve().parent.parent / "config.yaml"
-        with open(config_path) as f:
-            config = yaml.safe_load(f)
-        data_root = Path(config["data_root"])
-        output_root = Path(config["output_root"])
+        data_root = Path(cfg["data_root"])
+        output_root = Path(cfg["output_root"])
     else:
         data_root = Path(args.data_root)
         output_root = Path(args.output_root)
 
-    set_name = "public_set"
+    split_name = "public" if args.scene_name in cfg["scenes"]["public"] else "private"
+    set_name = "public_set" if split_name == "public" else "private_set1"
     scene_path = data_root / set_name / args.scene_name
-    out = output_root / "converted" / args.scene_name
+    out = output_root / "converted" / split_name / args.scene_name
 
     print(f"Converting {scene_path} -> {out}")
     convert_scene(scene_path, out)
