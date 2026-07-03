@@ -89,9 +89,12 @@ def main():
     config_dir = output_root / "configs"
     config_dir.mkdir(parents=True, exist_ok=True)
     config_dst = config_dir / f"{exp_name}.yaml"
-    if not config_dst.exists():
-        shutil.copy2(Path(__file__).resolve().parent.parent / "config.yaml", config_dst)
-        print(f"  Saved config snapshot -> {config_dst}")
+    if config_dst.exists():
+        print(f"  Config snapshot already exists -> {config_dst}")
+        print(f"  Use a different exp_name or delete the config to re-run.")
+        sys.exit(1)
+    shutil.copy2(Path(__file__).resolve().parent.parent / "config.yaml", config_dst)
+    print(f"  Saved config snapshot -> {config_dst}")
 
     if args.split == "all":
         scenes = config["scenes"]["public"] + config["scenes"]["private"]
