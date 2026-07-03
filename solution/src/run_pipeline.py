@@ -21,7 +21,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=
     source = converted_root / scene_name
     model_dir = model_root / scene_name
 
-    if model_dir.exists() and any(model_dir.iterdir()):
+    if (model_dir / "point_cloud").exists() and any((model_dir / "point_cloud").iterdir()):
         return
 
     gsplat_dir = str(gsplat_root.resolve())

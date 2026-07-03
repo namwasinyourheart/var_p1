@@ -61,6 +61,12 @@ def render_test_views(
 
 def _find_checkpoint(model_path: Path) -> Path:
     pc_dir = model_path / "point_cloud"
+    if not pc_dir.exists():
+        raise RuntimeError(
+            f"No point_cloud directory at {pc_dir}. "
+            f"Training may have been interrupted or skipped. "
+            f"Delete {model_path} and re-run training."
+        )
     dirs = sorted(pc_dir.iterdir())
     if not dirs:
         raise RuntimeError(f"No checkpoints in {pc_dir}")
