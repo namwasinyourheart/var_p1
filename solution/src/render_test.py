@@ -49,7 +49,8 @@ def render_test_views(
         result = render(cam, gaussians, pipe, bg)
         img = result["render"]
         img_np = (img.detach().cpu().permute(1, 2, 0).numpy() * 255).astype(np.uint8)
-        out_file = output_path / Path(pose["image_name"]).with_suffix(".png")
+        out_file = output_path / pose["image_name"]
+        img_np = img_np[..., :3]  # drop alpha if RGBA
         Image.fromarray(img_np).save(out_file)
         if not silent and (i + 1) % 10 == 0:
             print(f"    Rendered {i + 1}/{len(test_poses)}")
