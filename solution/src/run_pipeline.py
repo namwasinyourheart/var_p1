@@ -2,6 +2,7 @@ import argparse
 import sys
 import yaml
 from pathlib import Path
+import shutil
 
 from src.convert_colmap import convert_scene
 from src.render_test import render_test_views
@@ -84,6 +85,13 @@ def main():
     converted_root.mkdir(parents=True, exist_ok=True)
     model_root.mkdir(parents=True, exist_ok=True)
     submission_root.mkdir(parents=True, exist_ok=True)
+
+    config_dir = output_root / "configs"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_dst = config_dir / f"{exp_name}.yaml"
+    if not config_dst.exists():
+        shutil.copy2(Path(__file__).resolve().parent.parent / "config.yaml", config_dst)
+        print(f"  Saved config snapshot -> {config_dst}")
 
     if args.split == "all":
         scenes = config["scenes"]["public"] + config["scenes"]["private"]
