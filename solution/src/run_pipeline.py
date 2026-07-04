@@ -14,13 +14,17 @@ def load_config():
         return yaml.safe_load(f)
 
 
-def _set_deterministic():
-    import os
+def set_seed(seed=42):
+    import os, random
+    import numpy as np
     import torch
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    torch.cuda.manual_seed_all(0)
 
 
 def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=30000):
@@ -33,7 +37,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=
     if (model_dir / "point_cloud").exists() and any((model_dir / "point_cloud").iterdir()):
         return
 
-    _set_deterministic()
+    set_seed()
 
     gsplat_dir = str(gsplat_root.resolve())
     orig_cwd = os.getcwd()
