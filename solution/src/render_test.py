@@ -69,7 +69,7 @@ def _find_checkpoint(model_path: Path) -> Path:
             f"Training may have been interrupted or skipped. "
             f"Delete {model_path} and re-run training."
         )
-    dirs = sorted(pc_dir.iterdir())
+    dirs = sorted(pc_dir.iterdir(), key=lambda p: int(p.name.split("_")[-1]))
     if not dirs:
         raise RuntimeError(f"No checkpoints in {pc_dir}")
     return dirs[-1]
