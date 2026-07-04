@@ -17,6 +17,7 @@ scenes:
     - HNI0366
     - HNI0437
 
+seed: 42
 exp_name: exp_1
 output_root: /media/nampv1/hdd/var2026/p1/data/exp
 

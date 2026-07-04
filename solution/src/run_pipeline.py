@@ -6,6 +6,7 @@ import shutil
 
 from src.convert_colmap import convert_scene
 from src.render_test import render_test_views
+from src.utils.seed import set_seed
 
 
 def load_config():
@@ -27,7 +28,7 @@ def set_seed(seed=42):
     torch.backends.cudnn.benchmark = False
 
 
-def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=30000):
+def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=30000, seed=42):
     import os
     import sys
 
@@ -72,6 +73,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=
 
         print(f"  Running 3DGS training (in-process)...")
         safe_state(args.quiet)
+        set_seed(seed)
         training(lp.extract(args), op.extract(args), pp.extract(args),
                  args.test_iterations, args.save_iterations,
                  args.checkpoint_iterations, args.start_checkpoint, -1)
@@ -91,6 +93,9 @@ def main():
     data_root = Path(config["data_root"])
     output_root = Path(config["output_root"])
     gsplat_root = Path(config["gaussian_splatting"])
+
+    seed = config.get("seed", 42)
+    set_seed(seed)
 
     exp_name = config.get("exp_name", "default")
     converted_root = output_root / "converted"
@@ -144,7 +149,7 @@ def main():
             train_cfg = config["train"]
             train_scene(
                 scene_name, converted_root / split_name, model_root / split_name, gsplat_root,
-                iterations=train_cfg["iterations"],
+                iterations=train_cfg["iterations"], seed=seed,
             )
 
         if args.stage in ("all", "render"):

@@ -30,8 +30,10 @@ def render_test_views(
 
     from scene.gaussian_model import GaussianModel
     from utils.general_utils import safe_state
+    from src.utils.seed import set_seed
 
     safe_state(silent)
+    set_seed()
 
     gaussians = GaussianModel(3)
     ckpt = _find_checkpoint(model_path)
