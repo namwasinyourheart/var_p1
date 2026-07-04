@@ -27,3 +27,4 @@ train:
   iterations: 30000
   sh_degree: 3
   test_iterations: [7000, 30000]
+  save_iterations: [7000, 30000]

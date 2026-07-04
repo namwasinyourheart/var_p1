@@ -8,6 +8,8 @@ from src.convert_colmap import convert_scene
 from src.render_test import render_test_views
 from src.utils.seed import set_seed
 
+set_seed()
+
 
 def load_config():
     path = Path(__file__).resolve().parent.parent / "config.yaml"
@@ -15,25 +17,15 @@ def load_config():
         return yaml.safe_load(f)
 
 
-def set_seed(seed=42):
-    import os, random
-    import numpy as np
-    import torch
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
-
-def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=30000, seed=42):
+def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, seed=42):
     import os
     import sys
 
     source = converted_root / scene_name
     model_dir = model_root / scene_name
+    iterations = train_cfg["iterations"]
+    test_iterations = train_cfg.get("test_iterations", [7_000, 30_000])
+    save_iterations = train_cfg.get("save_iterations", test_iterations)
 
     if (model_dir / "point_cloud").exists() and any((model_dir / "point_cloud").iterdir()):
         return
@@ -55,8 +47,8 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=
         op = OptimizationParams(parser)
         pp = PipelineParams(parser)
         parser.add_argument('--detect_anomaly', action='store_true', default=False)
-        parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
-        parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 30_000])
+        parser.add_argument("--test_iterations", nargs="+", type=int, default=test_iterations)
+        parser.add_argument("--save_iterations", nargs="+", type=int, default=save_iterations)
         parser.add_argument("--quiet", action="store_true")
         parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
         parser.add_argument("--start_checkpoint", type=str, default=None)
@@ -66,6 +58,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, iterations=
             "-m", str(model_dir),
             "--iterations", str(iterations),
         ])
+        args.save_iterations = save_iterations
         args.save_iterations.append(args.iterations)
 
         from train import training
@@ -149,7 +142,7 @@ def main():
             train_cfg = config["train"]
             train_scene(
                 scene_name, converted_root / split_name, model_root / split_name, gsplat_root,
-                iterations=train_cfg["iterations"], seed=seed,
+                train_cfg, seed=seed,
             )
 
         if args.stage in ("all", "render"):
