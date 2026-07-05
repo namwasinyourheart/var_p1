@@ -195,6 +195,11 @@ def main():
 
         parallel = max(1, min(args.parallel, len(train_tasks)))
         if parallel > 1:
+            import multiprocessing
+            try:
+                multiprocessing.set_start_method("spawn", force=True)
+            except RuntimeError:
+                pass
             from concurrent.futures import ProcessPoolExecutor, as_completed
             n_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
             gpu_names = [torch.cuda.get_device_name(i) for i in range(n_gpus)] if n_gpus else []
