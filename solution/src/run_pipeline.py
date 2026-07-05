@@ -102,6 +102,8 @@ def main():
     parser.add_argument("--scene", type=str, default=None)
     parser.add_argument("--force", action="store_true", default=False,
                         help="Delete existing model dir and retrain from scratch")
+    parser.add_argument("--continue", action="store_true", default=False, dest="cont",
+                        help="Allow re-running existing exp_name (skip config snapshot error)")
     args = parser.parse_args()
 
     config = load_config()
@@ -125,11 +127,15 @@ def main():
     config_dir.mkdir(parents=True, exist_ok=True)
     config_dst = config_dir / f"{exp_name}.yaml"
     if config_dst.exists():
-        print(f"  Config snapshot already exists -> {config_dst}")
-        print(f"  Use a different exp_name or delete the config to re-run.")
-        sys.exit(1)
-    shutil.copy2(Path(__file__).resolve().parent.parent / "config.yaml", config_dst)
-    print(f"  Saved config snapshot -> {config_dst}")
+        if args.cont:
+            print(f"  --continue: using existing config snapshot -> {config_dst}")
+        else:
+            print(f"  Config snapshot already exists -> {config_dst}")
+            print(f"  Use --continue to re-run, or a different exp_name.")
+            sys.exit(1)
+    else:
+        shutil.copy2(Path(__file__).resolve().parent.parent / "config.yaml", config_dst)
+        print(f"  Saved config snapshot -> {config_dst}")
 
     if args.split == "all":
         scenes = config["scenes"]["public"] + config["scenes"]["private"]
