@@ -162,8 +162,6 @@ def main():
             print(f"Scene '{args.scene}' not found in split '{args.split}'")
             sys.exit(1)
 
-    train_tasks = []
-
     for scene_name in scenes:
         set_name = "public_set" if scene_name in config["scenes"]["public"] else "private_set1"
         split_name = "public" if scene_name in config["scenes"]["public"] else "private"
@@ -181,8 +179,12 @@ def main():
             else:
                 print("[convert] Already converted, skipping")
 
-        if args.stage in ("all", "train"):
-            train_cfg = config["train"]
+    # --- Train ---
+    if args.stage in ("all", "train"):
+        train_cfg = config["train"]
+        train_tasks = []
+        for scene_name in scenes:
+            split_name = "public" if scene_name in config["scenes"]["public"] else "private"
             model_path = model_root / split_name / scene_name
             if args.force and model_path.exists():
                 shutil.rmtree(model_path)
@@ -191,21 +193,6 @@ def main():
                 (scene_name, converted_root / split_name, model_root / split_name, gsplat_root, train_cfg, seed)
             )
 
-        if args.stage in ("all", "render"):
-            print("[render] Rendering test views...")
-            render_test_views(
-                scene_name, scene_path, model_root / split_name / scene_name, submission_root / split_name,
-            )
-
-        if args.stage in ("all", "evaluate") and set_name == "public_set":
-            print("[evaluate] Computing metrics...")
-            results = evaluate_public_scene(scene_path, submission_root / split_name, scene_name)
-            if results:
-                print(f"  PSNR: {results['psnr_mean']:.2f}  SSIM: {results['ssim_mean']:.4f}")
-                if "lpips_mean" in results:
-                    print(f"  LPIPS: {results['lpips_mean']:.4f}")
-
-    if train_tasks:
         parallel = max(1, min(args.parallel, len(train_tasks)))
         if parallel > 1:
             from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -226,6 +213,35 @@ def main():
         else:
             for task in train_tasks:
                 _train_one_scene_worker(0, *task, n_gpus=0)
+
+    # --- Render ---
+    if args.stage in ("all", "render"):
+        for scene_name in scenes:
+            set_name = "public_set" if scene_name in config["scenes"]["public"] else "private_set1"
+            split_name = "public" if scene_name in config["scenes"]["public"] else "private"
+            scene_path = data_root / set_name / scene_name
+            print(f"\n{'='*60}")
+            print(f"[{scene_name}] Rendering...")
+            print(f"{'='*60}")
+            render_test_views(
+                scene_name, scene_path, model_root / split_name / scene_name, submission_root / split_name,
+            )
+
+    # --- Evaluate ---
+    if args.stage in ("all", "evaluate"):
+        for scene_name in scenes:
+            set_name = "public_set" if scene_name in config["scenes"]["public"] else "private_set1"
+            split_name = "public" if scene_name in config["scenes"]["public"] else "private"
+            scene_path = data_root / set_name / scene_name
+            if set_name == "public_set":
+                print(f"\n{'='*60}")
+                print(f"[{scene_name}] Evaluating...")
+                print(f"{'='*60}")
+                results = evaluate_public_scene(scene_path, submission_root / split_name, scene_name)
+                if results:
+                    print(f"  PSNR: {results['psnr_mean']:.2f}  SSIM: {results['ssim_mean']:.4f}")
+                    if "lpips_mean" in results:
+                        print(f"  LPIPS: {results['lpips_mean']:.4f}")
 
     print(f"\nDone!")
 
