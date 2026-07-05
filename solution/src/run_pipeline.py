@@ -96,32 +96,17 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
         sys.path = orig_path
 
 
-class _PrefixedStdout:
-    def __init__(self, prefix):
-        self.prefix = prefix
-        self._stdout = sys.stdout
-
-    def write(self, text):
-        if text.strip():
-            self._stdout.write(f"{self.prefix} {text}")
-        else:
-            self._stdout.write(text)
-
-    def flush(self):
-        self._stdout.flush()
-
-
 def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_path, gsplat_root, train_cfg, seed, n_gpus=0):
     import os
-    import sys
     if n_gpus > 0:
         gpu_id = worker_id % n_gpus
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-        sys.stdout = _PrefixedStdout(f"[W{worker_id}][{scene_name}]")
-        print(f"GPU {gpu_id}")
+        print(f"\n{'─'*50}")
+        print(f"  Worker {worker_id} — {scene_name} (GPU {gpu_id})")
     else:
-        sys.stdout = _PrefixedStdout(f"[W{worker_id}][{scene_name}]")
-        print("CPU / single GPU")
+        print(f"\n{'─'*50}")
+        print(f"  Worker {worker_id} — {scene_name}")
+    print(f"{'─'*50}")
     train_scene(scene_name, converted_path, model_path, gsplat_root, train_cfg, seed)
 
 
