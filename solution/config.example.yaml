@@ -1,0 +1,43 @@
+# Path to raw dataset (containing public_set/ and private_set1/)
+data_root: /path/to/data/raw
+
+# List of scenes to process
+scenes:
+  public:        # 5 public scenes — have ground truth for evaluation
+    - hcm0031
+    - hcm0034
+    - HCM0181
+    - HCM0193
+    - HCM0204
+  private:       # 8 private scenes — no ground truth, only render & submit
+    - HCM0249
+    - HCM0254
+    - HCM0276
+    - HCM1439
+    - HNI0131
+    - HNI0265
+    - HNI0366
+    - HNI0437
+
+# Random seed for reproducibility (sets torch/np/random + cudnn.deterministic)
+seed: 42
+
+# Experiment name — used to separate models/submissions per experiment.
+# Config snapshot is saved to <output_root>/configs/<exp_name>.yaml on first run;
+# re-running with the same exp_name will error out to prevent accidental overwrite.
+exp_name: my_experiment
+
+# Root output directory
+output_root: /path/to/data/exp
+
+# Path to official 3DGS repo (third_party/gaussian-splatting)
+gaussian_splatting: /path/to/solution/third_party/gaussian-splatting
+
+# Training hyperparameters
+train:
+  iterations: 30000         # Total training iterations
+  sh_degree: 3              # Spherical harmonics degree (3 = 16 coeffs per color)
+  test_iterations: [7000, 30000]   # Steps at which test views are rendered
+  save_iterations: [7000, 30000]   # Steps at which checkpoint .ply is saved
+  checkpoint_iterations: [7000, 15000, 30000]  # Steps at which .pth (full state) is saved for resume
+  resume_from: null                # null = auto-find latest .pth; or set path to specific .pth

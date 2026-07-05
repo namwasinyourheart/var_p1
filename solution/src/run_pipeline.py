@@ -17,6 +17,11 @@ def load_config():
         return yaml.safe_load(f)
 
 
+def _find_resume_checkpoint(model_dir: Path) -> str:
+    chkpnts = sorted(model_dir.glob("chkpnt*.pth"))
+    return str(chkpnts[-1]) if chkpnts else None
+
+
 def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, seed=42):
     import os
     import sys
@@ -26,9 +31,16 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
     iterations = train_cfg["iterations"]
     test_iterations = train_cfg.get("test_iterations", [7_000, 30_000])
     save_iterations = train_cfg.get("save_iterations", test_iterations)
+    checkpoint_iterations = train_cfg.get("checkpoint_iterations", [])
 
-    if (model_dir / "point_cloud").exists() and any((model_dir / "point_cloud").iterdir()):
+    final_ply = model_dir / "point_cloud" / f"iteration_{iterations}" / "point_cloud.ply"
+    if final_ply.exists():
+        print(f"  Final checkpoint ({iterations} iters) found, skipping training")
         return
+
+    start_checkpoint = train_cfg.get("resume_from") or _find_resume_checkpoint(model_dir)
+    if start_checkpoint:
+        print(f"  Resuming from checkpoint: {start_checkpoint}")
 
     set_seed()
 
@@ -50,8 +62,8 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
         parser.add_argument("--test_iterations", nargs="+", type=int, default=test_iterations)
         parser.add_argument("--save_iterations", nargs="+", type=int, default=save_iterations)
         parser.add_argument("--quiet", action="store_true")
-        parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
-        parser.add_argument("--start_checkpoint", type=str, default=None)
+        parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=checkpoint_iterations)
+        parser.add_argument("--start_checkpoint", type=str, default=start_checkpoint)
 
         args = parser.parse_args([
             "-s", str(source),
@@ -59,7 +71,8 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
             "--iterations", str(iterations),
         ])
         args.save_iterations = save_iterations
-        args.save_iterations.append(args.iterations)
+        if iterations not in args.save_iterations:
+            args.save_iterations.append(iterations)
 
         from train import training
         from utils.general_utils import safe_state

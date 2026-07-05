@@ -28,3 +28,5 @@ train:
   sh_degree: 3
   test_iterations: [7000, 30000]
   save_iterations: [7000, 30000]
+  checkpoint_iterations: [7000, 15000, 30000]
+  resume_from: null  # or path like data/exp/models/exp_1/private/HCM0249/chkpnt15000.pth
