@@ -112,8 +112,10 @@ def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_ro
     log_file = log_dir / f"{scene_name}.log"
 
     orig_stdout = sys.stdout
+    orig_stderr = sys.stderr
     fh = open(log_file, "w", buffering=1)
     sys.stdout = fh
+    sys.stderr = fh
 
     gpu_str = f"GPU {gpu_id}" if gpu_id is not None else ""
     print(f"Worker {worker_id} — {scene_name} ({gpu_str})")
@@ -123,6 +125,7 @@ def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_ro
         train_scene(scene_name, converted_path, model_root, gsplat_root, train_cfg, seed)
     finally:
         sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
         fh.close()
 
     print(f"[W{worker_id}] {scene_name} done — log: {log_file}")
