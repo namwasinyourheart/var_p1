@@ -77,12 +77,19 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
         from train import training
         from utils.general_utils import safe_state
 
+        import torch
+        original_torch_load = torch.load
+        torch.load = lambda f, **kw: original_torch_load(f, weights_only=False, **kw)
+
         print(f"  Running 3DGS training (in-process)...")
         safe_state(args.quiet)
         set_seed(seed)
-        training(lp.extract(args), op.extract(args), pp.extract(args),
-                 args.test_iterations, args.save_iterations,
-                 args.checkpoint_iterations, args.start_checkpoint, -1)
+        try:
+            training(lp.extract(args), op.extract(args), pp.extract(args),
+                     args.test_iterations, args.save_iterations,
+                     args.checkpoint_iterations, args.start_checkpoint, -1)
+        finally:
+            torch.load = original_torch_load
     finally:
         os.chdir(orig_cwd)
         sys.path = orig_path
