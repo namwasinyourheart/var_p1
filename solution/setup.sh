@@ -39,7 +39,7 @@ fi
 
 cd third_party/gaussian-splatting
 
-export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.6}"
+export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0;8.6;8.9}"
 
 build_cuda_ext() {
     local name="$1" path="$2"
