@@ -101,6 +101,9 @@ def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_pa
     if n_gpus > 0:
         gpu_id = worker_id % n_gpus
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        print(f"[worker {worker_id}] {scene_name} -> GPU {gpu_id}")
+    else:
+        print(f"[worker {worker_id}] {scene_name} -> CPU / single GPU")
     train_scene(scene_name, converted_path, model_path, gsplat_root, train_cfg, seed)
 
 
@@ -207,7 +210,8 @@ def main():
         if parallel > 1:
             from concurrent.futures import ProcessPoolExecutor, as_completed
             n_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
-            print(f"\n[parallel] Training {len(train_tasks)} scenes with {parallel} workers ({n_gpus} GPUs)")
+            gpu_names = [torch.cuda.get_device_name(i) for i in range(n_gpus)] if n_gpus else []
+            print(f"\n[parallel] {len(train_tasks)} scenes, {parallel} workers, {n_gpus} GPU(s): {gpu_names}")
             with ProcessPoolExecutor(max_workers=parallel) as executor:
                 futures = {
                     executor.submit(_train_one_scene_worker, i, *task, n_gpus):
