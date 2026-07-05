@@ -157,7 +157,6 @@ def main():
             train_cfg = config["train"]
             model_path = model_root / split_name / scene_name
             if args.force and model_path.exists():
-                import shutil
                 shutil.rmtree(model_path)
                 print(f"  --force: deleted {model_path}")
             train_scene(
