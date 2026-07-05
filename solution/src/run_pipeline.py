@@ -3,6 +3,7 @@ import sys
 import yaml
 from pathlib import Path
 import shutil
+import torch
 
 from src.convert_colmap import convert_scene
 from src.render_test import render_test_views
@@ -95,6 +96,13 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
         sys.path = orig_path
 
 
+def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_path, gsplat_root, train_cfg, seed, n_gpus=0):
+    if n_gpus > 0:
+        gpu_id = worker_id % n_gpus
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    train_scene(scene_name, converted_path, model_path, gsplat_root, train_cfg, seed)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--split", choices=["public", "private", "all"], default="public")
@@ -104,6 +112,8 @@ def main():
                         help="Delete existing model dir and retrain from scratch")
     parser.add_argument("--continue", action="store_true", default=False, dest="cont",
                         help="Allow re-running existing exp_name (skip config snapshot error)")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Number of scenes to train/render in parallel")
     args = parser.parse_args()
 
     config = load_config()
@@ -148,6 +158,8 @@ def main():
             print(f"Scene '{args.scene}' not found in split '{args.split}'")
             sys.exit(1)
 
+    train_tasks = []
+
     for scene_name in scenes:
         set_name = "public_set" if scene_name in config["scenes"]["public"] else "private_set1"
         split_name = "public" if scene_name in config["scenes"]["public"] else "private"
@@ -166,15 +178,13 @@ def main():
                 print("[convert] Already converted, skipping")
 
         if args.stage in ("all", "train"):
-            print("[train] Training 3DGS...")
             train_cfg = config["train"]
             model_path = model_root / split_name / scene_name
             if args.force and model_path.exists():
                 shutil.rmtree(model_path)
                 print(f"  --force: deleted {model_path}")
-            train_scene(
-                scene_name, converted_root / split_name, model_root / split_name, gsplat_root,
-                train_cfg, seed=seed,
+            train_tasks.append(
+                (scene_name, converted_root / split_name, model_root / split_name, gsplat_root, train_cfg, seed)
             )
 
         if args.stage in ("all", "render"):
@@ -190,6 +200,27 @@ def main():
                 print(f"  PSNR: {results['psnr_mean']:.2f}  SSIM: {results['ssim_mean']:.4f}")
                 if "lpips_mean" in results:
                     print(f"  LPIPS: {results['lpips_mean']:.4f}")
+
+    if train_tasks:
+        parallel = max(1, min(args.parallel, len(train_tasks)))
+        if parallel > 1:
+            from concurrent.futures import ProcessPoolExecutor, as_completed
+            n_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+            print(f"\n[parallel] Training {len(train_tasks)} scenes with {parallel} workers ({n_gpus} GPUs)")
+            with ProcessPoolExecutor(max_workers=parallel) as executor:
+                futures = {
+                    executor.submit(_train_one_scene_worker, i, *task, n_gpus):
+                    task[0] for i, task in enumerate(train_tasks)
+                }
+                for f in as_completed(futures):
+                    name = futures[f]
+                    try:
+                        f.result()
+                    except Exception as e:
+                        print(f"\n[ERROR] {name} failed: {e}")
+        else:
+            for task in train_tasks:
+                _train_one_scene_worker(0, *task, n_gpus=0)
 
     print(f"\nDone!")
 
