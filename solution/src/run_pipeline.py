@@ -96,18 +96,36 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
         sys.path = orig_path
 
 
-def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_path, gsplat_root, train_cfg, seed, n_gpus=0):
+def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_root, gsplat_root, train_cfg, seed, n_gpus=0):
     import os
+    import sys
+    from pathlib import Path
+
     if n_gpus > 0:
         gpu_id = worker_id % n_gpus
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-        print(f"\n{'─'*50}")
-        print(f"  Worker {worker_id} — {scene_name} (GPU {gpu_id})")
     else:
-        print(f"\n{'─'*50}")
-        print(f"  Worker {worker_id} — {scene_name}")
-    print(f"{'─'*50}")
-    train_scene(scene_name, converted_path, model_path, gsplat_root, train_cfg, seed)
+        gpu_id = None
+
+    log_dir = Path(model_root) / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"{scene_name}.log"
+
+    orig_stdout = sys.stdout
+    fh = open(log_file, "w", buffering=1)
+    sys.stdout = fh
+
+    gpu_str = f"GPU {gpu_id}" if gpu_id is not None else ""
+    print(f"Worker {worker_id} — {scene_name} ({gpu_str})")
+    print(f"{'─'*40}")
+
+    try:
+        train_scene(scene_name, converted_path, model_root, gsplat_root, train_cfg, seed)
+    finally:
+        sys.stdout = orig_stdout
+        fh.close()
+
+    print(f"[W{worker_id}] {scene_name} done — log: {log_file}")
 
 
 def main():
