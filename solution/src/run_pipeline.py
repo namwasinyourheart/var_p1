@@ -142,6 +142,8 @@ def main():
                         help="Allow re-running existing exp_name (skip config snapshot error)")
     parser.add_argument("--parallel", type=int, default=1,
                         help="Number of scenes to train/render in parallel")
+    parser.add_argument("--dedicated-gpu", action="store_true", default=False,
+                        help="Require one GPU per worker (error if parallel > n_gpus)")
     args = parser.parse_args()
 
     config = load_config()
@@ -226,6 +228,10 @@ def main():
                 pass
             from concurrent.futures import ProcessPoolExecutor, as_completed
             n_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+            if args.dedicated_gpu and parallel > n_gpus:
+                raise RuntimeError(
+                    f"--dedicated-gpu set but {parallel} workers > {n_gpus} GPU(s)"
+                )
             gpu_names = [torch.cuda.get_device_name(i) for i in range(n_gpus)] if n_gpus else []
             print(f"\n[parallel] {len(train_tasks)} scenes, {parallel} workers, {n_gpus} GPU(s): {gpu_names}")
             with ProcessPoolExecutor(max_workers=parallel) as executor:
