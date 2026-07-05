@@ -97,6 +97,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
 
 
 def _train_one_scene_worker(worker_id: int, scene_name, converted_path, model_path, gsplat_root, train_cfg, seed, n_gpus=0):
+    import os
     if n_gpus > 0:
         gpu_id = worker_id % n_gpus
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
