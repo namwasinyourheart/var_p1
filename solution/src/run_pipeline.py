@@ -38,7 +38,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
         print(f"  Final checkpoint ({iterations} iters) found, skipping training")
         return
 
-    start_checkpoint = train_cfg.get("resume_from") or _find_resume_checkpoint(model_dir)
+    start_checkpoint = _find_resume_checkpoint(model_dir)
     if start_checkpoint:
         print(f"  Resuming from checkpoint: {start_checkpoint}")
 
@@ -93,6 +93,8 @@ def main():
     parser.add_argument("--split", choices=["public", "private", "all"], default="public")
     parser.add_argument("--stage", choices=["all", "convert", "train", "render", "evaluate"], default="all")
     parser.add_argument("--scene", type=str, default=None)
+    parser.add_argument("--force", action="store_true", default=False,
+                        help="Delete existing model dir and retrain from scratch")
     args = parser.parse_args()
 
     config = load_config()
@@ -153,6 +155,11 @@ def main():
         if args.stage in ("all", "train"):
             print("[train] Training 3DGS...")
             train_cfg = config["train"]
+            model_path = model_root / split_name / scene_name
+            if args.force and model_path.exists():
+                import shutil
+                shutil.rmtree(model_path)
+                print(f"  --force: deleted {model_path}")
             train_scene(
                 scene_name, converted_root / split_name, model_root / split_name, gsplat_root,
                 train_cfg, seed=seed,

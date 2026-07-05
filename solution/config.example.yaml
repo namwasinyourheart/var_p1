@@ -40,4 +40,3 @@ train:
   test_iterations: [7000, 30000]   # Steps at which test views are rendered
   save_iterations: [7000, 30000]   # Steps at which checkpoint .ply is saved
   checkpoint_iterations: [7000, 15000, 30000]  # Steps at which .pth (full state) is saved for resume
-  resume_from: null                # null = auto-find latest .pth; or set path to specific .pth
