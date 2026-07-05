@@ -20,6 +20,7 @@ scenes:
 seed: 42
 exp_name: exp_1
 output_root: /media/nampv1/hdd/var2026/p1/data/exp
+# submission_root: /path/to/override/submissions/root  # default: <output_root>/submissions/<exp_name>/
 
 gaussian_splatting: /media/nampv1/hdd/var2026/p1/solution/third_party/gaussian-splatting
 

@@ -115,7 +115,7 @@ def main():
     exp_name = config.get("exp_name", "default")
     converted_root = output_root / "converted"
     model_root = output_root / "models" / exp_name
-    submission_root = output_root / "submissions" / exp_name
+    submission_root = Path(config.get("submission_root", output_root / "submissions" / exp_name))
 
     converted_root.mkdir(parents=True, exist_ok=True)
     model_root.mkdir(parents=True, exist_ok=True)

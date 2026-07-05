@@ -30,6 +30,11 @@ exp_name: my_experiment
 # Root output directory
 output_root: /path/to/data/exp
 
+# Optional: override submission output path.
+# Default: <output_root>/submissions/<exp_name>/
+# Useful for pointing submissions directly to a shared submission folder.
+# submission_root: /path/to/data/exp/submissions/my_submission
+
 # Path to official 3DGS repo (third_party/gaussian-splatting)
 gaussian_splatting: /path/to/solution/third_party/gaussian-splatting
 
