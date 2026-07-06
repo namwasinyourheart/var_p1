@@ -37,7 +37,7 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
             return train_cfg[list_key]
         interval = train_cfg.get(interval_key)
         if interval:
-            iters = list(range(interval, iterations, interval))
+            iters = [0] + list(range(interval, iterations, interval))
             if iterations not in iters:
                 iters.append(iterations)
             return iters
