@@ -27,6 +27,6 @@ gaussian_splatting: /media/nampv1/hdd/var2026/p1/solution/third_party/gaussian-s
 train:
   iterations: 30000
   sh_degree: 3
-  test_iterations: [7000, 30000]
-  save_iterations: [7000, 30000]
-  checkpoint_iterations: [7000, 15000, 30000]
+  test_interval: 2000
+  save_interval: 2000
+  checkpoint_interval: 2000
