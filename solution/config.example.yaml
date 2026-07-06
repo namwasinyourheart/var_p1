@@ -42,6 +42,13 @@ gaussian_splatting: /path/to/solution/third_party/gaussian-splatting
 train:
   iterations: 30000         # Total training iterations
   sh_degree: 3              # Spherical harmonics degree (3 = 16 coeffs per color)
-  test_iterations: [7000, 30000]   # Steps at which test views are rendered
-  save_iterations: [7000, 30000]   # Steps at which checkpoint .ply is saved
-  checkpoint_iterations: [7000, 15000, 30000]  # Steps at which .pth (full state) is saved for resume
+
+  # Use intervals (preferred) — auto-generates every N iterations + always includes last:
+  test_interval: 2000       # Render test views every N iterations
+  save_interval: 2000       # Save .ply checkpoint every N iterations
+  checkpoint_interval: 2000 # Save .pth (resume state) every N iterations
+
+  # Alternatively, use explicit lists (overrides interval if present):
+  # test_iterations: [7000, 30000]
+  # save_iterations: [7000, 30000]
+  # checkpoint_iterations: [7000, 15000, 30000]

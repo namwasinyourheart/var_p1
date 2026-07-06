@@ -30,9 +30,22 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
     source = converted_root / scene_name
     model_dir = model_root / scene_name
     iterations = train_cfg["iterations"]
-    test_iterations = train_cfg.get("test_iterations", [7_000, 30_000])
-    save_iterations = train_cfg.get("save_iterations", test_iterations)
-    checkpoint_iterations = train_cfg.get("checkpoint_iterations", [])
+
+    def _resolve_iters(interval_key: str, list_key: str, default: list) -> list:
+        """Use explicit list from config, or generate from interval, or fallback to default."""
+        if list_key in train_cfg:
+            return train_cfg[list_key]
+        interval = train_cfg.get(interval_key)
+        if interval:
+            iters = list(range(interval, iterations, interval))
+            if iterations not in iters:
+                iters.append(iterations)
+            return iters
+        return default
+
+    test_iterations = _resolve_iters("test_interval", "test_iterations", [7_000, 30_000])
+    save_iterations = _resolve_iters("save_interval", "save_iterations", test_iterations)
+    checkpoint_iterations = _resolve_iters("checkpoint_interval", "checkpoint_iterations", [])
 
     final_ply = model_dir / "point_cloud" / f"iteration_{iterations}" / "point_cloud.ply"
     if final_ply.exists():
@@ -72,8 +85,6 @@ def train_scene(scene_name, converted_root, model_root, gsplat_root, train_cfg, 
             "--iterations", str(iterations),
         ])
         args.save_iterations = save_iterations
-        if iterations not in args.save_iterations:
-            args.save_iterations.append(iterations)
 
         from train import training
         from utils.general_utils import safe_state
